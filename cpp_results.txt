@@ -1,35 +1,45 @@
-===== SIMULATION SUMMARY - TRIAL 1 =====
+To run, use command:
+> *g++ -o myprogram hospital.cpp -fopenmp*
 
+then
+
+> *./myprogram*             
+
+
+
+============= SIMULATION SUMMARY - TRIAL 1 =============
 Total Patients Processed : 100
 Counters/Threads Used    : 4
-Total Execution Time     : 38.56 sec
-Average Waiting Time     : 18.77 sec
-Average Turnaround Time  : 19.76 sec
-Throughput               : 2.59 patients/sec
-CPU Utilization          : 506.49 %
+Total Execution Time     : 34.16 sec (scaled: 284.67 real min)
+Average Waiting Time     : 16.40 sec (scaled: 136.67 real min)
+Average Turnaround Time  : 17.61 sec (scaled: 146.76 real min)
+Throughput               : 2.93 patients/sec (scaled: 0.35 patients/real min)
+Worker Utilization (rho) : 87.90 %
+System CPU Utilization   : 0.15 %
 
 
 
 
-===== SIMULATION SUMMARY - TRIAL 2 =====
-
+============= SIMULATION SUMMARY - TRIAL 2 =============
 Total Patients Processed : 300
 Counters/Threads Used    : 4
-Total Execution Time     : 115.88 sec
-Average Waiting Time     : 57.17 sec
-Average Turnaround Time  : 58.18 sec
-Throughput               : 2.59 patients/sec
-CPU Utilization          : 505.66 %
+Total Execution Time     : 100.43 sec (scaled: 836.88 real min)
+Average Waiting Time     : 49.09 sec (scaled: 409.09 real min)
+Average Turnaround Time  : 50.28 sec (scaled: 419.03 real min)
+Throughput               : 2.99 patients/sec (scaled: 0.36 patients/real min)
+Worker Utilization (rho) : 88.53 %
+System CPU Utilization   : 0.11 %
 
 
 
 
-===== SIMULATION SUMMARY - TRIAL 3 =====
+============= SIMULATION SUMMARY - TRIAL 3 =============
 
 Total Patients Processed : 500
 Counters/Threads Used    : 4
-Total Execution Time     : 190.94 sec
-Average Waiting Time     : 95.04 sec
-Average Turnaround Time  : 96.03 sec
-Throughput               : 2.62 patients/sec
-CPU Utilization          : 388.71 %
+Total Execution Time     : 169.07 sec (scaled: 1408.93 real min)
+Average Waiting Time     : 83.21 sec (scaled: 693.42 real min)
+Average Turnaround Time  : 84.41 sec (scaled: 703.44 real min)
+Throughput               : 2.96 patients/sec (scaled: 0.35 patients/real min)
+Worker Utilization (rho) : 88.14 %
+System CPU Utilization   : 0.13 %
