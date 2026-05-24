@@ -26,12 +26,6 @@ struct Patient {
 
 // ==========================
 // CPU Sampler
-// Mirrors Python's monitor_cpu():
-//   - Runs in a dedicated std::thread
-//   - Samples every 100ms for the entire simulation lifetime
-//   - Uses FILETIME units (100-ns intervals) consistently
-//     to avoid the original GetTickCount64() unit mismatch
-//   - Stores all samples so mean/peak can be reported
 // ==========================
 class CpuSampler {
 public:
@@ -114,7 +108,7 @@ private:
     void loop() {
         while (running_) {
             samples_.push_back(sample());
-            this_thread::sleep_for(milliseconds(100)); // 10 Hz — matches Python
+            this_thread::sleep_for(milliseconds(100)); // 10 Hz
         }
     }
 
@@ -137,7 +131,6 @@ int main() {
     // Scale Factor
     // Compresses real-world time by 1/500 so the simulation
     // runs in seconds while modeling a process that takes hours.
-    // Matches the Python implementation's virtual clock design.
     //
     // Real-world equivalents:
     //   Arrival interval : 12 sec → 24 ms  (scaled)
@@ -149,9 +142,9 @@ int main() {
     // ==========================
     // Simulation Parameters
     // ==========================
-    const int totalPatients = 100; // Trial 1
+    //const int totalPatients = 100; // Trial 1
     //const int totalPatients = 300; // Trial 2
-    //const int totalPatients = 500; // Trial 3
+    const int totalPatients = 500; // Trial 3
 
     const int numCounters = 4;
 
@@ -204,8 +197,6 @@ int main() {
 
     // ==========================
     // Start CPU Sampler Thread
-    // Mirrors Python's monitor_cpu background thread.
-    // Launched before arrival so it captures all phases.
     // ==========================
     CpuSampler cpuSampler;
     cpuSampler.start();
