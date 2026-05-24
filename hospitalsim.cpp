@@ -138,9 +138,9 @@ int main() {
     // ==========================
     // Simulation Parameters
     // ==========================
-    const int totalPatients = 100; // Trial 1
+    //const int totalPatients = 100; // Trial 1
     //const int totalPatients = 300; // Trial 2
-    //const int totalPatients = 500; // Trial 3
+    const int totalPatients = 500; // Trial 3
 
     const int numCounters = 4;
 
@@ -162,9 +162,15 @@ int main() {
     for (int i = 0; i < numCounters; i++)
         generators[i].seed(rd() + i);
 
-    normal_distribution<double> serviceDistribution(meanService, stdDevService);
+    // FIX: Each thread gets its own distribution instance.
+    // std::normal_distribution has internal state (Box-Muller cache) and is
+    // NOT thread-safe when shared across OMP threads, even with separate generators.
+    vector<normal_distribution<double>> serviceDists(
+        numCounters, normal_distribution<double>(meanService, stdDevService));
 
-    queue<Patient> patientQueue;
+    queue<Patient>    patientQueue;
+    mutex             queueMutex;              // protects patientQueue for arrival thread + OMP
+    atomic<bool>      arrivalsComplete{false}; // signals workers that all patients have arrived
 
     int    processedPatients   = 0;
     double totalWaitingTime    = 0.0;
@@ -198,30 +204,37 @@ int main() {
     cpuSampler.start();
 
     // ==========================
-    // Patient Arrival
+    // FIX: Concurrent Arrival Thread
+    // Previously, all arrivals were generated BEFORE any processing began,
+    // causing O(N) pre-delay and inflated wait times. Now arrivals run in a
+    // separate std::thread concurrently with the OMP worker pool.
     // ==========================
-    cout << "\n========== PATIENT ARRIVAL ==========\n" << endl;
+    cout << "\n========== PATIENT ARRIVAL & PROCESSING (Concurrent) ==========\n" << endl;
 
-    for (int i = 1; i <= totalPatients; i++) {
+    thread arrivalThread([&]() {
+        for (int i = 1; i <= totalPatients; i++) {
+            auto   now     = high_resolution_clock::now();
+            double arrival = duration<double>(now - simulationStart).count();
 
-        auto now    = high_resolution_clock::now();
-        double arrival = duration<double>(now - simulationStart).count();
+            Patient p;
+            p.id          = i;
+            p.arrivalTime = arrival;
 
-        Patient p;
-        p.id          = i;
-        p.arrivalTime = arrival;
+            {
+                lock_guard<mutex> lock(queueMutex);
+                patientQueue.push(p);
+            }
 
-        patientQueue.push(p);
+            cout << "Patient "
+                 << setw(3) << p.id
+                 << " arrived at "
+                 << fixed << setprecision(2)
+                 << p.arrivalTime << " sec\n";
 
-        cout << "Patient "
-             << setw(3) << p.id
-             << " arrived at "
-             << fixed << setprecision(2)
-             << p.arrivalTime << " sec"
-             << endl;
-
-        this_thread::sleep_for(milliseconds(arrivalIntervalMs));
-    }
+            this_thread::sleep_for(milliseconds(arrivalIntervalMs));
+        }
+        arrivalsComplete = true; // signal workers: no more patients will arrive
+    });
 
     cout << "\n==================== PROCESSING PATIENTS ====================\n" << endl;
 
@@ -259,14 +272,19 @@ int main() {
                 }
             }
 
-            if (!hasPatient)
-                break;
+            // FIX: Do NOT break on empty queue — arrivals may still be coming.
+            // Spin-yield until either a patient appears or arrivals are confirmed done.
+            if (!hasPatient) {
+                if (arrivalsComplete.load()) break; // all patients arrived & processed
+                this_thread::sleep_for(milliseconds(2)); // yield CPU, avoid busy-wait
+                continue;
+            }
 
             // ==========================
             // Generate Service Time
-            // Each thread uses its own generator — no data race
+            // Each thread uses its own generator AND its own distribution — no data race
             // ==========================
-            double serviceTime = serviceDistribution(generators[threadID]);
+            double serviceTime = serviceDists[threadID](generators[threadID]);
 
             // Truncate minimum to 10 ms (~5 real seconds)
             if (serviceTime < 10.0)
@@ -314,6 +332,10 @@ int main() {
             }
         }
     }
+
+    // Wait for arrival thread to finish (it should already be done
+    // since all workers have exited, meaning all patients were processed)
+    arrivalThread.join();
 
     auto simulationEnd = high_resolution_clock::now();
 
