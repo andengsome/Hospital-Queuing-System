@@ -1,2 +1,34 @@
-d\
+===== SIMULATION SUMMARY - TRIAL 1 =====
 
+Total Patients Processed : 100
+Counters/Threads Used    : 4
+Total Execution Time     : 38.56 sec
+Average Waiting Time     : 18.77 sec
+Average Turnaround Time  : 19.76 sec
+Throughput               : 2.59 patients/sec
+CPU Utilization          : 506.49 %
+
+
+
+===== SIMULATION SUMMARY - TRIAL 2 =====
+
+Total Patients Processed : 300
+Counters/Threads Used    : 4
+Total Execution Time     : 115.88 sec
+Average Waiting Time     : 57.17 sec
+Average Turnaround Time  : 58.18 sec
+Throughput               : 2.59 patients/sec
+CPU Utilization          : 505.66 %
+
+
+
+
+===== SIMULATION SUMMARY - TRIAL 3 =====
+
+Total Patients Processed : 500
+Counters/Threads Used    : 4
+Total Execution Time     : 190.94 sec
+Average Waiting Time     : 95.04 sec
+Average Turnaround Time  : 96.03 sec
+Throughput               : 2.62 patients/sec
+CPU Utilization          : 388.71 %
