@@ -10,6 +10,7 @@ CPU Utilization          : 506.49 %
 
 
 
+
 ===== SIMULATION SUMMARY - TRIAL 2 =====
 
 Total Patients Processed : 300
