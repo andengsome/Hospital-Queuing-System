@@ -8,6 +8,7 @@
 #include <atomic>
 #include <iomanip>
 #include <numeric>
+#include <algorithm>
 #include <windows.h>
 #include <psapi.h>
 #include <omp.h>
