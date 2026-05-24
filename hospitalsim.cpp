@@ -128,10 +128,6 @@ private:
 int main() {
 
     // ==========================
-    // Scale Factor
-    // Compresses real-world time by 1/500 so the simulation
-    // runs in seconds while modeling a process that takes hours.
-    //
     // Real-world equivalents:
     //   Arrival interval : 12 sec → 24 ms  (scaled)
     //   Mean service     : 10 min → 1200 ms (scaled)
@@ -142,9 +138,9 @@ int main() {
     // ==========================
     // Simulation Parameters
     // ==========================
-    //const int totalPatients = 100; // Trial 1
+    const int totalPatients = 100; // Trial 1
     //const int totalPatients = 300; // Trial 2
-    const int totalPatients = 500; // Trial 3
+    //const int totalPatients = 500; // Trial 3
 
     const int numCounters = 4;
 
