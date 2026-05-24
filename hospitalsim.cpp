@@ -8,7 +8,6 @@
 #include <atomic>
 #include <iomanip>
 #include <numeric>
-#include <algorithm>
 #include <windows.h>
 #include <psapi.h>
 #include <omp.h>
@@ -26,6 +25,12 @@ struct Patient {
 
 // ==========================
 // CPU Sampler
+// Mirrors Python's monitor_cpu():
+//   - Runs in a dedicated std::thread
+//   - Samples every 100ms for the entire simulation lifetime
+//   - Uses FILETIME units (100-ns intervals) consistently
+//     to avoid the original GetTickCount64() unit mismatch
+//   - Stores all samples so mean/peak can be reported
 // ==========================
 class CpuSampler {
 public:
@@ -122,10 +127,18 @@ private:
     ULARGE_INTEGER    lastWall_;
 };
 
+// ==========================
+// Main Function
+// ==========================
 int main() {
 
     // ==========================
-    // Scale Factor - Real-world equivalents:
+    // Scale Factor
+    // Compresses real-world time by 1/500 so the simulation
+    // runs in seconds while modeling a process that takes hours.
+    // Matches the Python implementation's virtual clock design.
+    //
+    // Real-world equivalents:
     //   Arrival interval : 12 sec → 24 ms  (scaled)
     //   Mean service     : 10 min → 1200 ms (scaled)
     //   Std dev service  : 2 min  → 240 ms  (scaled)
@@ -169,8 +182,10 @@ int main() {
 
     // Per-thread busy time tracking (index = thread ID)
     vector<double> threadBusyTime(numCounters, 0.0);
-    vector<int>    threadPatientCount(numCounters, 0);
 
+    // ==========================
+    // Header
+    // ==========================
     cout << "\n====================================================\n";
     cout << "HOSPITAL QUEUE SIMULATION\n";
     cout << "====================================================\n";
@@ -188,6 +203,8 @@ int main() {
 
     // ==========================
     // Start CPU Sampler Thread
+    // Mirrors Python's monitor_cpu background thread.
+    // Launched before arrival so it captures all phases.
     // ==========================
     CpuSampler cpuSampler;
     cpuSampler.start();
@@ -195,7 +212,7 @@ int main() {
     // ==========================
     // Patient Arrival
     // ==========================
-    cout << "\n===== PATIENT ARRIVAL =====\n" << endl;
+    cout << "\n========== PATIENT ARRIVAL ==========\n" << endl;
 
     for (int i = 1; i <= totalPatients; i++) {
 
@@ -288,8 +305,7 @@ int main() {
                 processedPatients++;
                 totalWaitingTime      += waitingTime;
                 totalTurnaroundTime   += turnaroundTime;
-                threadBusyTime[threadID]    += serviceTime / 1000.0; // ms → sec
-                threadPatientCount[threadID]++;
+                threadBusyTime[threadID] += serviceTime / 1000.0;
 
                 cout << "Patient "               << currentPatient.id
                      << " processed by Counter " << threadID          << endl;
@@ -334,15 +350,9 @@ int main() {
         totalBusy += threadBusyTime[i];
     double avgWorkerUtil = (totalBusy / (numCounters * totalExecutionTime)) * 100.0;
 
-    // Per-thread utilization
-    vector<double> perThreadUtil(numCounters);
-    for (int i = 0; i < numCounters; i++)
-        perThreadUtil[i] = (threadBusyTime[i] / totalExecutionTime) * 100.0;
-
     // CPU stats from continuous sampler
     double avgCpu  = cpuSampler.mean();
     double peakCpu = cpuSampler.peak();
-    int    numSamples = (int)cpuSampler.samples().size();
 
     // ==========================
     // Scale back to real-world
@@ -385,30 +395,12 @@ int main() {
          << scaledThroughput << " patients/real min)"
          << endl;
 
-    // Worker Utilization — average then per-thread breakdown
-    cout << "\nWorker Utilization --------------------------------------" << endl;
-    cout << "Average (all counters)   : "
+    cout << "Worker Utilization (rho) : "
          << fixed << setprecision(2)
          << avgWorkerUtil << " %" << endl;
-    for (int i = 0; i < numCounters; i++) {
-        cout << "  Counter " << i
-             << "  -> "
-             << perThreadUtil[i] << " %"
-             << "  (" << threadPatientCount[i] << " patients,"
-             << " busy " << fixed << setprecision(2)
-             << threadBusyTime[i] << " sec)"
-             << endl;
-    }
 
-    // CPU Utilization — mean + peak from continuous sampling
-    cout << "\nSystem CPU Utilization ----------------------------------" << endl;
-    cout << "Mean CPU (simulation)    : "
-         << fixed << setprecision(2)
-         << avgCpu << " %"
-         << "  (over " << numSamples << " samples @ 100ms)"
-         << endl;
-    cout << "Peak CPU (simulation)    : "
-         << peakCpu << " %" << endl;
+    cout << "System CPU Utilization   : "
+         << avgCpu << " %" << endl;
 
     cout << "\n========================================================\n";
 
