@@ -1,9 +1,9 @@
 To run, use command:
-> *g++ -o myprogram hospital.cpp -fopenmp*
+g++ -o myprogram hospital.cpp -fopenmp
 
 then
 
-> *./myprogram*             
+*./myprogram         
 
 
 
